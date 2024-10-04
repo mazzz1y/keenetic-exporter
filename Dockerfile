@@ -1,4 +1,9 @@
-FROM python:3.9-alpine as build
+ARG BASE_IMAGE=python:3.10-alpine
+
+FROM ${BASE_IMAGE} AS build
+
+ENV INFLUXDB_EXPORTER_VERSION=0.11.7
+ENV KEENETIC_INFLUXDB_VERSION=2.0.2
 
 RUN apk add --no-cache git
 
@@ -19,9 +24,9 @@ RUN wget https://github.com/prometheus/influxdb_exporter/releases/download/v${IN
   mv influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64/influxdb_exporter / && \
   rm -rf influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64*
 
-FROM python:3.9-alpine
+FROM ${BASE_IMAGE}
 
-RUN apk add --no-cache gettext && \
+RUN apk add --no-cache gettext bash && \
   adduser -D -h /app -u 1000 app
 
 COPY config.ini.tmpl /
@@ -35,4 +40,9 @@ COPY start.sh /
 USER app
 WORKDIR /app
 
-CMD /start.sh
+ENV KEENETIC_URL=http://keenetic-host:80
+ENV KEENETIC_LOGIN=exporter
+ENV KEENETIC_PASSWORD=secret
+ENV SCRAPE_INTERVAL=20
+
+CMD ["/start.sh"]
