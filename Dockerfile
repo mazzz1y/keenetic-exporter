@@ -19,10 +19,26 @@ RUN git clone -b $KEENETIC_INFLUXDB_VERSION https://github.com/vitaliy-sk/keenet
   mv /tmp/keenetic-grafana-monitoring/config/metrics.json /keenetic-grafana-monitoring/config/
 
 ARG INFLUXDB_EXPORTER_VERSION
-RUN wget https://github.com/prometheus/influxdb_exporter/releases/download/v${INFLUXDB_EXPORTER_VERSION}/influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64.tar.gz && \
-  tar xvf influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64.tar.gz && \
-  mv influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64/influxdb_exporter / && \
-  rm -rf influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-amd64*
+RUN apkArch="$(apk --print-arch)"; \
+    case "$apkArch" in \
+        aarch64) \
+            arch='arm64' ;; \
+        x86) \
+            arch='386' ;; \
+        x86_64) \
+            arch='amd64' ;; \
+        armhf) \
+            arch='armv6' ;; \
+        armv7) \
+            arch='armv7' ;; \
+        *) \
+            echo >&2 "error: unsupported architecture ($apkArch)"; \
+            exit 1 ;; \
+    esac; \
+  wget https://github.com/prometheus/influxdb_exporter/releases/download/v${INFLUXDB_EXPORTER_VERSION}/influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-$arch.tar.gz && \
+    tar xvf influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-$arch.tar.gz && \
+    mv influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-$arch/influxdb_exporter / && \
+    rm -rf influxdb_exporter-${INFLUXDB_EXPORTER_VERSION}.linux-$arch*
 
 FROM ${BASE_IMAGE}
 
