@@ -52,3 +52,8 @@ If everything works, let's add it to Prometheus:
       target_label: __name__
       replacement: keenetic_$1
 ```
+
+### Versioning
+```
+${KEENETIC_INFLUXDB_VERSION}-${INFLUXDB_EXPORTER_VERSION}-${BUILD_VERSION}
+```
