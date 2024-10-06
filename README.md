@@ -8,24 +8,23 @@ This repository contains a Docker setup that combines:
 
 This setup is beneficial for those looking to use Keenetic monitoring with Prometheus instead of InfluxDB.
 
-To build this container, run the following command:
+## Start
+
+To run this container, run the following command:
+
 ```bash
-docker build -t keenetic-exporter \
-  --build-arg KEENETIC_INFLUXDB_VERSION=2.0.2 \
-  --build-arg INFLUXDB_EXPORTER_VERSION=0.11.4 .
+docker run -d \
+  -p "127.0.0.1:9122:9122"
+  -e KEENETIC_URL=http://192.168.1.1:80 \
+  -e KEENETIC_LOGIN=monitoring \
+  -e KEENETIC_PASSWORD=password \
+  -e SCRAPE_INTERVAL=20 \
+  ghcr.io/mazzz1y/keenetic-exporter:latest
 ```
 
-The following environment variables are required to start the container:
-```env
-KEENETIC_URL=http://keenetic-host:80
-KEENETIC_LOGIN=exporter
-KEENETIC_PASSWORD=secret
-SCRAPE_INTERVAL=20
-```
-
-After starting, you can access the metrics endpoint at `keenetic-exporter:9122`. For example:
+After starting, you can check the metrics endpoint at `127.0.0.1:9122`:
 ```bash
-~ $ wget -qO- keenetic-exporter:9122/metrics | grep internet_status
+~ $ wget -qO- 127.0.0.1:9122/metrics | grep internet_status
 # HELP internet_status_captive_accessible InfluxDB Metric
 # TYPE internet_status_captive_accessible untyped
 internet_status_captive_accessible 1
@@ -41,4 +40,15 @@ internet_status_host_accessible 1
 # HELP internet_status_internet InfluxDB Metric
 # TYPE internet_status_internet untyped
 internet_status_internet 1
+```
+
+If everything works, let's add it to Prometheus:
+```yaml
+  - job_name: 'keenetic-exporter'
+    static_configs:
+      - targets: ['127.0.0.1:9122']
+    metric_relabel_configs:
+    - source_labels: [__name__]
+      target_label: __name__
+      replacement: keenetic_$1
 ```
